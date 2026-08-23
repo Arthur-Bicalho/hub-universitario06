@@ -3,6 +3,7 @@ package br.edu.hub.service;
 import br.edu.hub.dto.RegistrationRequest;
 import br.edu.hub.dto.RegistrationResponse;
 import br.edu.hub.entity.Activity;
+import br.edu.hub.entity.ActivityStatus;
 import br.edu.hub.entity.Registration;
 import br.edu.hub.repository.ActivityRepository;
 import br.edu.hub.repository.RegistrationRepository;
@@ -28,9 +29,14 @@ public class RegistrationService {
     @Transactional
     public RegistrationResponse register(Long activityId, RegistrationRequest request) {
         Activity activity = activityService.requireActivity(activityId);
-        if (activity.remainingSpots() <= 0) {
-            throw new IllegalStateException("Activity is full");
+
+        if (activity.getStatus() != ActivityStatus.OPEN) {
+            String message = activity.getStatus() == ActivityStatus.CLOSED
+                ? "Activity is closed"
+                : "Activity is full";
+            throw new IllegalStateException(message);
         }
+
         Registration registration = registrationRepository.save(
                 new Registration(activity, request.studentName(), request.studentEmail())
         );
