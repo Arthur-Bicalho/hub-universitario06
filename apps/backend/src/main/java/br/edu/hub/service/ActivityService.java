@@ -19,7 +19,19 @@ public class ActivityService {
 
     @Transactional(readOnly = true)
     public List<ActivityResponse> list(String search) {
-        return activityRepository.findAllByOrderByDateDesc().stream()
+        List<Activity> activities;
+
+        if (search == null || search.isBlank()) {
+            activities = activityRepository.findAllByOrderByDateDesc();
+        } else {
+            String term = search.trim();
+            activities = activityRepository
+                .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrderByDateDesc(
+                    term,
+                    term
+                );
+        }
+        return activities.stream()
                 .map(ActivityResponse::from)
                 .toList();
     }
