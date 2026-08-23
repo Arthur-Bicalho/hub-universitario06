@@ -28,6 +28,9 @@ public class RegistrationService {
     @Transactional
     public RegistrationResponse register(Long activityId, RegistrationRequest request) {
         Activity activity = activityService.requireActivity(activityId);
+        if (activity.remainingSpots() <= 0) {
+            throw new IllegalStateException("Activity is full");
+        }
         Registration registration = registrationRepository.save(
                 new Registration(activity, request.studentName(), request.studentEmail())
         );
