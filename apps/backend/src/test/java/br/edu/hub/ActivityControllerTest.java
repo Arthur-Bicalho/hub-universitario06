@@ -51,6 +51,40 @@ class ActivityControllerTest {
     }
 
     @Test
+    void shouldSearchActivitiesByTitleIgnoringCase() throws Exception {
+        mockMvc.perform(get("/api/activities")
+                        .param("search", "workshop"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Workshop de APIs"));
+    }
+
+    @Test
+    void shouldSearchActivitiesByDescriptionIgnoringCase() throws Exception {
+        mockMvc.perform(get("/api/activities")
+                        .param("search", "LOTADA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Curso lotado"));
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenSearchHasNoMatches() throws Exception {
+         mockMvc.perform(get("/api/activities")
+                        .param("search", "Robótica"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void shouldReturnAllActivitiesWhenSearchIsEmpty() throws Exception {
+         mockMvc.perform(get("/api/activities")
+                        .param("search", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
     void shouldFindExistingActivity() throws Exception {
         mockMvc.perform(get("/api/activities/{id}", openActivity.getId()))
                 .andExpect(status().isOk())
