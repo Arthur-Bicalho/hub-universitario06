@@ -1,0 +1,24 @@
+# Backend (Maven / Java)
+apps/backend/target/
+apps/backend/data/
+*.class
+
+# Frontend (Node)
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/pnpm-lock.yaml
+apps/frontend/pnpm-workspace.yaml
+apps/frontend/.vite/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
