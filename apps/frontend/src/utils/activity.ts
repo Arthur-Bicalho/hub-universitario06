@@ -15,6 +15,14 @@ export const statusLabels: Record<ActivityStatus, string> = {
   CLOSED: 'Encerrada',
 }
 
+export const categoryColors: Record<ActivityCategory, string> = {
+  WORKSHOP: '#3B82F6',
+  LECTURE: '#8B5CF6',
+  COURSE: '#10B981',
+  EXTENSION_PROJECT: '#F59E0B',
+  EVENT: '#EC4899',
+}
+
 export function formatActivityDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'medium',
@@ -25,6 +33,25 @@ export function formatActivityDate(date: string) {
 export function filterActivities(activities: Activity[], category: CategoryFilter) {
   if (category === 'ALL') return activities
   return activities.filter(
-    (activity) => activity.category === category || activity.category === 'EVENT',
+    (activity) => activity.category === category,
   )
+}
+
+export function getOpenActivitiesSortedByDate(activities: Activity[]): Activity[] {
+  return activities
+    .filter((activity) => activity.status === 'OPEN')
+    .slice()
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+}
+
+export function getAllActivitiesSortedByDate(activities: Activity[]): Activity[] {
+  return activities
+    .slice()
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+}
+
+export function getTotalAvailableSpots(activities: Activity[]): number {
+  return activities
+    .filter((activity) => activity.status === 'OPEN')
+    .reduce((total, activity) => total + activity.remainingSpots, 0)
 }
