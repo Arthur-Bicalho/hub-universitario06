@@ -3,6 +3,7 @@ package br.edu.hub.service;
 import br.edu.hub.dto.RegistrationRequest;
 import br.edu.hub.dto.RegistrationResponse;
 import br.edu.hub.entity.Activity;
+import br.edu.hub.entity.ActivityStatus;
 import br.edu.hub.entity.Registration;
 import br.edu.hub.repository.ActivityRepository;
 import br.edu.hub.repository.RegistrationRepository;
@@ -25,16 +26,6 @@ public class RegistrationService {
         this.activityService = activityService;
     }
 
-    @Transactional
-    public RegistrationResponse register(Long activityId, RegistrationRequest request) {
-        Activity activity = activityService.requireActivity(activityId);
-        Registration registration = registrationRepository.save(
-                new Registration(activity, request.studentName(), request.studentEmail())
-        );
-        activity.incrementRegistrations();
-        activityRepository.save(activity);
-        return RegistrationResponse.from(registration);
-    }
 
     @Transactional(readOnly = true)
     public List<RegistrationResponse> list(Long activityId) {
@@ -42,5 +33,21 @@ public class RegistrationService {
         return registrationRepository.findByActivityIdOrderByCreatedAtAsc(activityId).stream()
                 .map(RegistrationResponse::from)
                 .toList();
+    }
+    
+    @Transactional
+    public RegistrationResponse register(Long activityId, RegistrationRequest request) {
+        Activity activity = activityService.requireActivity(activityId);
+
+        if (activity.getStatus() != ActivityStatus.OPEN) {
+            throw new IllegalStateException("Activity is full");
+        }
+
+        Registration registration = registrationRepository.save(
+            new Registration(activity, request.studentName(), request.studentEmail())
+        );
+        activity.incrementRegistrations();
+        activityRepository.save(activity);
+        return RegistrationResponse.from(registration);
     }
 }
