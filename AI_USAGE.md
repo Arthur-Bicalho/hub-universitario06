@@ -1,0 +1,181 @@
+# AI_USAGE.md
+
+(Arthur Bicalho Angelo)
+
+Uso de IA declarado neste desafio. Ferramenta utilizada em todas as etapas: **Claude (Anthropic)**, via claude.ai.
+
+O uso variou por etapa: em investigação de bugs, a IA foi usada como par de raciocínio e para interpretar logs/testes, evitando fornecer diagnósticos prontos quando isso reduziria o valor da investigação própria; em geração de código de features novas (dashboard) e em apoio de processo (Git/GitHub, Issues, PRs), a IA gerou artefatos que contribuissem para o desenvolvimento do produto, sempre revisados e testados localmente antes do commit.
+
+---
+
+## 1. Bug: `GET /api/activities/{id}` retorna 500 em vez de 404
+
+**Etapa:** investigação e correção.
+
+**Objetivo dos prompts:** interpretar a saída de `./mvnw test` (assertion de falha e dump do MockMvc); identificar os significados dos codigos de erro como '500' e '404'; posteriormente, confirmação da causa raiz e do código de correção.
+
+**Sugestão aceita:** a IA identificou que `IllegalArgumentException` estava mapeada para 500 em `GlobalExceptionHandler` e propôs alterar o mapeamento para 404 (`HttpStatus.NOT_FOUND`), preservando a mensagem de erro já existente. Alteração de uma linha, sem criação de exceção nova.
+
+**Arquivos influenciados:**
+- `apps/backend/src/main/java/br/edu/hub/exception/GlobalExceptionHandler.java`
+
+**Como validei:** rodei `./mvnw test -Dtest=ActivityControllerTest` localmente e confirmei `shouldReturn404ForUnknownActivity` passando, sem quebrar os demais testes da classe.
+
+---
+
+## 2. Bug: inscrição aceita em atividade `FULL` ou `CLOSED`
+
+**Etapa:** investigação, confirmação de causa raiz e correção.
+
+**Objetivo dos prompts:** confirmar hipótese de causa raiz identificada por mim após leitura do código de `RegistrationService`; posteriormente, diferenciação da mensagem de erro por status (`"Activity is full"` / `"Activity is closed"`).
+
+**Sugestões aceitas e adaptadas:**
+- Aceito: uso de `IllegalStateException` (exceção nativa do Java) em vez de criar uma classe de exceção própria, com handler novo em `GlobalExceptionHandler` retornando 409.
+- Adaptado: a versão inicial usava uma única condição (`status != OPEN`) com mensagem fixa; a pedido, foi ajustada para duas condições separadas (`FULL` e `CLOSED`), cada uma com mensagem própria.
+
+**Arquivos influenciados:**
+- `apps/backend/src/main/java/br/edu/hub/service/RegistrationService.java`
+- `apps/backend/src/main/java/br/edu/hub/exception/GlobalExceptionHandler.java`
+
+**Como validei:** rodei `./mvnw test -Dtest=ActivityControllerTest` (9/9 passando) e testes manuais via `curl` contra atividades `FULL` e `CLOSED` reais do catálogo, confirmando 409 em ambos os casos e 201 preservado para atividades `OPEN`.
+
+---
+
+## 3. Feature: busca de atividades por título/descrição
+
+**Etapa:** revisão de código (Pull Request).
+
+**Objetivo dos prompts:** revisão do PR de implementação da busca (backend: `ActivityRepository`/`ActivityService`; frontend: `activityService.ts`/`useActivities.ts`), buscando bugs não cobertos pelos testes existentes.
+
+**Observação registrada, não bloqueante:** caracteres curinga de SQL (`%`, `_`) não são escapados no termo de busca — risco de borda aceito conscientemente, sem impacto de segurança.
+
+**Arquivos influenciados (por outra colaboradora, revisados por mim com apoio de IA):**
+- `apps/backend/src/main/java/br/edu/hub/repository/ActivityRepository.java`
+- `apps/backend/src/main/java/br/edu/hub/service/ActivityService.java`
+- `apps/frontend/src/services/activityService.ts`
+- `apps/frontend/src/hooks/useActivities.ts`
+
+**Como validei:** rodei `./mvnw test -Dtest=ActivityControllerTest` localmente (9/9 passando) antes de aprovar o PR.
+
+---
+
+## 4. Feature: indicadores no Dashboard
+
+**Etapa:** geração de código completo (feature nova).
+
+**Objetivo dos prompts, em sequência:** popular o dashboard vazio com vagas disponíveis e datas das atividades; depois, expandir para calendário completo incluindo atividades `FULL`/`CLOSED` com status explícito; depois, identificação visual por categoria (cor de enquadramento, sem agrupamento em seções).
+
+**Sugestões aceitas:**
+- Estrutura geral: card de resumo (total de vagas, somando apenas atividades `OPEN`) + lista cronológica completa.
+- Uso de cor na borda esquerda de cada item para identificar a categoria, com legenda.
+- Reaproveitamento do endpoint `GET /api/activities` já existente, sem necessidade de mudança de backend.
+
+
+**Arquivos influenciados:**
+- `apps/frontend/src/utils/activity.ts` (novas funções: `getOpenActivitiesSortedByDate`, `getAllActivitiesSortedByDate`, `getTotalAvailableSpots`, `categoryColors`)
+- `apps/frontend/src/pages/DashboardPage.tsx` (reescrito)
+- `apps/frontend/src/styles.css` (estilos novos para cards, badges de status e legenda de categorias)
+- `apps/frontend/src/utils/activity.test.ts` (6 testes novos cobrindo as funções acima)
+
+**Como validei:**
+- `npx tsc -b --force`, `npm run lint`, `npm run build`, `npm test` — todos limpos antes do commit.
+- Reproduzi um bug real de posicionamento de CSS (bloco colado dentro de uma `@media query` existente por engano durante uma colagem manual), diagnosticado a partir de evidência da aba Network do navegador, e corrigido restaurando a estrutura correta do arquivo.
+- Conferência visual manual no navegador após cada rodada de ajuste (espaçamento, cores por categoria, badges de status).
+
+---
+
+## 5. Processo: Git, GitHub, Issues e Pull Requests
+
+**Etapa:** apoio operacional durante todo o desafio (não geração de código de produto).
+
+**Objetivo dos prompts:** estruturação de Issues no formato contexto/reprodução/causa raiz/critério de aceite; nomenclatura de branches (`fix/...`, `feat/...`, `chore/...`); descrições de PR; diagnóstico de erros de Git (heredoc mal fechado, mudanças feitas na branch errada, remoto de fork).
+
+**Resultado:** todas as Issues e descrições de PR deste repositório foram estruturadas com apoio da IA a partir de evidências que eu mesmo coletei (logs de teste, saídas de `curl`, prints do DevTools).
+
+**Arquivos influenciados:** nenhum arquivo de código; Issues e descrições de PR no GitHub.
+
+**Como validei:** conferência manual de cada Issue/PR antes de publicar, e verificação da seção "Development" no GitHub para confirmar o vínculo `Closes #N` antes de cada merge.
+
+---
+
+## 6. Chore: `.gitignore` ausente
+
+**Etapa:** diagnóstico estrutural e correção.
+
+**Objetivo do prompt:** investigar por que artefatos de build apareciam como "untracked" persistentemente, e por que arquivos de gerenciador de pacote incorreto (`pnpm-lock.yaml`, `pnpm-workspace.yaml`) existiam no projeto.
+
+**Resultado:** a IA identificou que o projeto não possuía `.gitignore` em nenhum nível e gerou o conteúdo cobrindo `target/`, `data/`, `node_modules/`, `dist/`, arquivos de IDE e OS.
+
+**Arquivos influenciados:**
+- `.gitignore` (novo)
+
+**Como validei:** `git ls-files | grep -E "node_modules|target|dist|data"` para confirmar que nada indevido já estava rastreado antes do merge; conferência de que os artefatos desapareceram da listagem de untracked após a criação do arquivo.
+
+---
+(Matheus)
+
+## 1. Bug: inscrição aceita em `FULL`/`CLOSED` (issues #3 e #5)
+
+Eu já tinha corrigido o caso `FULL`. A IA revisou e identificou que faltava cobrir `CLOSED`, propondo trocar a checagem de `remainingSpots()` para validação direta do `status`, com mensagens diferentes por caso.
+
+**Arquivos:** `RegistrationService.java`, `GlobalExceptionHandler.java`
+
+**Validação:** testes manuais via `Invoke-RestMethod` (Windows) — `FULL` e `CLOSED` retornando 409, `OPEN` retornando 201. Teste automatizado existente continuou passando.
+
+## 2. Bug: 500 em vez de 404 (issue #1)
+
+A IA revisou a correção que eu já tinha feito na branch `fix/activity-not-found-status` e confirmou que estava correta (mapeamento de `IllegalArgumentException` para 404), sem sugerir mudanças.
+
+## 3. Processo (Git/GitHub)
+
+Apoio em comandos de clone/commit/push, diagnóstico de erro de `curl` no PowerShell, e redação/revisão de descrições de PR e comentários de review — sempre a partir de testes que eu mesmo rodei.
+
+## 4. Revisão da PR de colega (issue #4)
+
+Ajudou a melhorar a redação de um comentário de aprovação de algumas PRs, sem acesso da IA ao código da correção.
+
+---
+
+## Observação geral sobre revisão
+
+Em nenhuma etapa o código gerado ou sugerido pela IA foi commitado sem antes rodar a suíte de testes local (`./mvnw test` / `npm test`), lint (`npm run lint`) e build (`npm run build` / `./mvnw compile`) e, nos casos de interface, sem conferência visual manual no navegador. Nas etapas de investigação de bugs (#1, #3, #5), optei por não solicitar a causa raiz pronta antes de eu mesmo ler o código e formar uma hipótese, para preservar o valor da investigação própria exigida pelo desafio.
+
+---
+(Mayra)
+
+## 1. Feature: busca de atividades por título e descrição
+**Etapa:** investigação, implementação e testes
+**Objetivo dos prompts:** entender por que o campo de busca não alterava a listagem de atividades, identificar em quais partes do frontend e backend o termo `search` deixava de ser utilizado e implementar a correção sem alterar a estrutura existente do projeto.
+
+**Sugestões aceitas:**
+
+- Adição de teste para busca sem correspondências, verificando retorno de lista vazia.
+- Adição de teste explícito para `search=""`, verificando o retorno da listagem completa.
+
+**Arquivo influenciado:**
+
+- `apps/backend/src/test/java/br/edu/hub/ActivityControllerTest.java`
+
+**Como validei:** executei cada novo teste individualmente com Maven e ambos passaram antes do novo commit e atualização do Pull Request.
+
+## 3. Processo: Git, GitHub e Pull Request
+
+**Etapa:** apoio operacional durante a implementação.
+
+**Objetivo dos prompts:** auxiliar no uso de branches, execução de testes, conferência de arquivos modificados, preparação de commit, push e criação do Pull Request.
+
+**Uso da IA:** utilizei apoio para interpretar saídas de `git status`, `git diff`, `git log`, `git push` e para revisar a descrição do Pull Request. Antes do commit, conferi que apenas os cinco arquivos relacionados à busca estavam sendo adicionados e mantive fora arquivos locais como `node_modules`, `target`, `dist` e dados gerados durante a execução.
+
+**Como validei:** conferi o diff antes do commit, executei os testes relacionados à implementação e confirmei no GitHub que o Pull Request estava associado à branch e à Issue corretas.
+
+## 4. Revisão de Pull Request: atividade inexistente retornando 404
+
+**Etapa:** revisão de código de colega.
+
+**Objetivo dos prompts:** analisar se a alteração de `500 Internal Server Error` para `404 Not Found` era coerente e verificar se o uso global de `IllegalArgumentException` poderia afetar outros fluxos do backend.
+
+**Análise realizada:** pesquisei no projeto os usos de `IllegalArgumentException` e confirmei que, no estado atual do código, ela era lançada apenas quando uma atividade não era encontrada.
+
+Antes da aprovação, atualizei localmente a branch do Pull Request e executei o teste `shouldReturn404ForUnknownActivity`.
+
+**Como validei:** o teste específico passou com `1` teste executado, `0` falhas e `BUILD SUCCESS`. Também executei a suíte do backend; a falha restante estava relacionada à inscrição em atividade lotada e não à alteração revisada.
