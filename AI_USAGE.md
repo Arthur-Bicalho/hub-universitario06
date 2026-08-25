@@ -139,3 +139,43 @@ Ajudou a melhorar a redação de um comentário de aprovação de algumas PRs, s
 ## Observação geral sobre revisão
 
 Em nenhuma etapa o código gerado ou sugerido pela IA foi commitado sem antes rodar a suíte de testes local (`./mvnw test` / `npm test`), lint (`npm run lint`) e build (`npm run build` / `./mvnw compile`) e, nos casos de interface, sem conferência visual manual no navegador. Nas etapas de investigação de bugs (#1, #3, #5), optei por não solicitar a causa raiz pronta antes de eu mesmo ler o código e formar uma hipótese, para preservar o valor da investigação própria exigida pelo desafio.
+
+---
+(Mayra)
+
+## 1. Feature: busca de atividades por título e descrição
+**Etapa:** investigação, implementação e testes
+**Objetivo dos prompts:** entender por que o campo de busca não alterava a listagem de atividades, identificar em quais partes do frontend e backend o termo `search` deixava de ser utilizado e implementar a correção sem alterar a estrutura existente do projeto.
+
+**Sugestões aceitas:**
+
+- Adição de teste para busca sem correspondências, verificando retorno de lista vazia.
+- Adição de teste explícito para `search=""`, verificando o retorno da listagem completa.
+
+**Arquivo influenciado:**
+
+- `apps/backend/src/test/java/br/edu/hub/ActivityControllerTest.java`
+
+**Como validei:** executei cada novo teste individualmente com Maven e ambos passaram antes do novo commit e atualização do Pull Request.
+
+## 3. Processo: Git, GitHub e Pull Request
+
+**Etapa:** apoio operacional durante a implementação.
+
+**Objetivo dos prompts:** auxiliar no uso de branches, execução de testes, conferência de arquivos modificados, preparação de commit, push e criação do Pull Request.
+
+**Uso da IA:** utilizei apoio para interpretar saídas de `git status`, `git diff`, `git log`, `git push` e para revisar a descrição do Pull Request. Antes do commit, conferi que apenas os cinco arquivos relacionados à busca estavam sendo adicionados e mantive fora arquivos locais como `node_modules`, `target`, `dist` e dados gerados durante a execução.
+
+**Como validei:** conferi o diff antes do commit, executei os testes relacionados à implementação e confirmei no GitHub que o Pull Request estava associado à branch e à Issue corretas.
+
+## 4. Revisão de Pull Request: atividade inexistente retornando 404
+
+**Etapa:** revisão de código de colega.
+
+**Objetivo dos prompts:** analisar se a alteração de `500 Internal Server Error` para `404 Not Found` era coerente e verificar se o uso global de `IllegalArgumentException` poderia afetar outros fluxos do backend.
+
+**Análise realizada:** pesquisei no projeto os usos de `IllegalArgumentException` e confirmei que, no estado atual do código, ela era lançada apenas quando uma atividade não era encontrada.
+
+Antes da aprovação, atualizei localmente a branch do Pull Request e executei o teste `shouldReturn404ForUnknownActivity`.
+
+**Como validei:** o teste específico passou com `1` teste executado, `0` falhas e `BUILD SUCCESS`. Também executei a suíte do backend; a falha restante estava relacionada à inscrição em atividade lotada e não à alteração revisada.
