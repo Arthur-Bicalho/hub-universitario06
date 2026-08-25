@@ -112,6 +112,29 @@ O uso variou por etapa: em investigação de bugs, a IA foi usada como par de ra
 **Como validei:** `git ls-files | grep -E "node_modules|target|dist|data"` para confirmar que nada indevido já estava rastreado antes do merge; conferência de que os artefatos desapareceram da listagem de untracked após a criação do arquivo.
 
 ---
+(Matheus)
+
+## 1. Bug: inscrição aceita em `FULL`/`CLOSED` (issues #3 e #5)
+
+Eu já tinha corrigido o caso `FULL`. A IA revisou e identificou que faltava cobrir `CLOSED`, propondo trocar a checagem de `remainingSpots()` para validação direta do `status`, com mensagens diferentes por caso.
+
+**Arquivos:** `RegistrationService.java`, `GlobalExceptionHandler.java`
+
+**Validação:** testes manuais via `Invoke-RestMethod` (Windows) — `FULL` e `CLOSED` retornando 409, `OPEN` retornando 201. Teste automatizado existente continuou passando.
+
+## 2. Bug: 500 em vez de 404 (issue #1)
+
+A IA revisou a correção que eu já tinha feito na branch `fix/activity-not-found-status` e confirmou que estava correta (mapeamento de `IllegalArgumentException` para 404), sem sugerir mudanças.
+
+## 3. Processo (Git/GitHub)
+
+Apoio em comandos de clone/commit/push, diagnóstico de erro de `curl` no PowerShell, e redação/revisão de descrições de PR e comentários de review — sempre a partir de testes que eu mesmo rodei.
+
+## 4. Revisão da PR de colega (issue #4)
+
+Ajudou a melhorar a redação de um comentário de aprovação de algumas PRs, sem acesso da IA ao código da correção.
+
+---
 
 ## Observação geral sobre revisão
 
